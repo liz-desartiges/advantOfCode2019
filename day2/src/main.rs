@@ -10,7 +10,7 @@ struct Instruction {
 }
 
 impl Instruction {
-    fn new(slice: &[u64]) -> Result<Self, String> {
+    fn new(slice: &[u32]) -> Result<Self, String> {
         match slice[0] {
             99 =>  Err("Program Halted!".to_string()),
             1 | 2 => {
@@ -25,7 +25,7 @@ impl Instruction {
         }
     }
 
-    fn run(self, program: &mut Vec<u64>) {
+    fn run(self, program: &mut Vec<u32>) {
         let op1 = program[self.op1];
         let op2 = program[self.op2];
         match self.opcode {
@@ -36,6 +36,20 @@ impl Instruction {
     }
 }
 
+fn run(program: &mut Vec<u32>, noun: u8, verb: u8) -> u32 {
+    let mut pos = 0;
+    program[1] = noun as u32;
+    program[2] = verb as u32;
+    loop {
+        match Instruction::new(&program[pos..pos+4]) {
+            Ok(i) => i,
+            Err(_s) => break,
+        }.run(program);
+        pos += 4;
+    };
+    program[0]
+}
+
 
 fn main() {
     let file = File::open("input").unwrap();
@@ -43,16 +57,13 @@ fn main() {
     let mut program = String::new();
     buf_reader.read_to_string(&mut program).unwrap();
     program.pop();
-    let mut program: Vec<u64> = program.split(",").map(|s| s.parse().unwrap()).collect();
-    let mut pos = 0;
-    let r = loop {
-        match Instruction::new(&program[pos..pos+4]) {
-            Ok(i) => i,
-            Err(s) => break format!("{}", s),
-        }.run(&mut program);
-        pos += 4;
-    };
-    let program: Vec<String> = program.iter().map(|s| s.to_string()).collect();
-    println!("{}", program.join(","));
-    println!("{}", r);
+    let program: Vec<u32> = program.split(",").map(|s| s.parse().unwrap()).collect();
+
+    for verb in 0..100 {
+        for noun in 0..100 {
+            if run(&mut program.clone(), noun, verb) == 19690720 {
+                println!("{}", 100u64 * noun as u64 + verb as u64);
+            }
+        }
+    }
 }
